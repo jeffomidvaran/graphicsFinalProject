@@ -97,9 +97,9 @@ function createGLContext(canvas) {
 
 function createProgram(gl, vertexShaderID, fragmentShaderID) {
     function getTextContent( elementID ) {
-            // This nested function retrieves the text content of an
-            // element on the web page.  It is used here to get the shader
-            // source code from the script elements that contain it.
+        // This nested function retrieves the text content of an
+        // element on the web page.  It is used here to get the shader
+        // source code from the script elements that contain it.
         var element = document.getElementById(elementID);
         var node = element.firstChild;
         var str = "";
@@ -251,11 +251,7 @@ function update_uniform(modelview,projection,currentModelNumber){
 
 
 function makeRoadBase(){
-    /* 
-        ####################################################
-        ############## OUTER GROUND ########################
-        ####################################################
-    */
+    /* ############## OUTER GROUND ######################## */
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 4;
     installModel(objects[objectIndex], colors.dark_green);
@@ -268,11 +264,7 @@ function makeRoadBase(){
     modelview = prevModelview;
 
    
-    /* 
-        ####################################################
-        ############## ROAD ################################
-        ####################################################
-    */
+    /* ############## ROAD ################################ */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 4;
     installModel(objects[objectIndex], colors.grey);
@@ -285,11 +277,7 @@ function makeRoadBase(){
     modelview = prevModelview;
 
 
-    /* 
-        ####################################################
-        ############## INNER RING ##########################
-        ####################################################
-    */
+    /* ############## INNER RING ########################## */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 4;
     installModel(objects[objectIndex], colors.dark_green);
@@ -304,10 +292,7 @@ function makeRoadBase(){
 
 
 function makeTree(size,x,y,z){
-    
-    /* ############################################# 
-       ################# TREE TOP ################# 
-       ############################################# */ 
+    /* ################# TREE TOP ################# */ 
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 5;
     installModel(objects[objectIndex], colors.green);
@@ -323,10 +308,7 @@ function makeTree(size,x,y,z){
     modelview = prevModelview;
     
 
-    /* ############################################# 
-       ################# TREE BASE ################# 
-       ############################################# */ 
-
+    /* ################# TREE BASE ################# */ 
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 4;
     installModel(objects[objectIndex], colors.brown);
@@ -337,17 +319,11 @@ function makeTree(size,x,y,z){
 
     update_uniform(modelview,projection, objectIndex);
     modelview = prevModelview;
-
-
 }
 
 
 function makePole(lightOn){
-    /* 
-        ####################################################
-        ############## POLE BASE ###########################
-        ####################################################
-    */
+    /* ############## POLE BASE ########################### */
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 4;
     installModel(objects[objectIndex], colors.dark_grey);
@@ -360,11 +336,7 @@ function makePole(lightOn){
     modelview = prevModelview;
 
 
-    /* 
-        ####################################################
-        ############## POLE TOP ############################
-        ####################################################
-    */
+    /* ############## POLE TOP ############################ */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 2;
 
@@ -405,11 +377,7 @@ function makeSun(shining, angle_in_degrees){
 
 
 function makeCarBody(angle_in_degrees){
-    /* 
-    ####################################################
-    ############## CAR BOTTOM ##########################
-    ####################################################
-    */
+    /* ############## CAR BOTTOM ########################## */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 0;
     installModel(objects[objectIndex], colors.dark_red);
@@ -425,11 +393,7 @@ function makeCarBody(angle_in_degrees){
     modelview = prevModelview;
     
 
-    /* 
-    ####################################################
-    ############## CAR TOP #############################
-    ####################################################
-    */
+    /* ############## CAR TOP ############################# */
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 0;
     installModel(objects[objectIndex], colors.red);
@@ -450,11 +414,7 @@ function makeCarBody(angle_in_degrees){
 
 
 function makeCarWheels(angle_in_degrees){
-    /* 
-    ####################################################
-    ############## FRONT LEFT WHEEL #####################
-    ####################################################
-    */
+    /* ############## FRONT LEFT WHEEL ##################### */
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 3;
     installModel(objects[objectIndex], colors.black);
@@ -471,11 +431,7 @@ function makeCarWheels(angle_in_degrees){
     modelview = prevModelview;
    
 
-    /* 
-    ####################################################
-    ############# FRONT RIGHT WHEEL #####################
-    ####################################################
-    */
+    /* ############# FRONT RIGHT WHEEL ##################### */
     
     prevModelview = Object.assign([], modelview); 
     objectIndex = 3;
@@ -494,11 +450,7 @@ function makeCarWheels(angle_in_degrees){
     update_uniform(modelview,projection, objectIndex);
     modelview = prevModelview;
 
-    /* 
-    ####################################################
-    ############## BACK LEFT WHEEL #####################
-    ####################################################
-    */
+    /* ############## BACK LEFT WHEEL ##################### */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 3;
     installModel(objects[objectIndex], colors.black);
@@ -515,11 +467,7 @@ function makeCarWheels(angle_in_degrees){
     modelview = prevModelview;
 
 
-    /* 
-    ####################################################
-    ############# BACK RIGHT WHEEL #####################
-    ####################################################
-    */
+    /* ############# BACK RIGHT WHEEL ##################### */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 3;
     installModel(objects[objectIndex], colors.black);
@@ -538,11 +486,7 @@ function makeCarWheels(angle_in_degrees){
 
 
 function makeCarHeadlights(angle_in_degrees,headlightsOn){
-    /* 
-    ####################################################
-    ############# LEFT HEADLIGHT #######################
-    ####################################################
-    */
+    /* ############# LEFT HEADLIGHT ####################### */
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 4;
     if(headlightsOn ==true){
@@ -550,7 +494,6 @@ function makeCarHeadlights(angle_in_degrees,headlightsOn){
     }else{
         installModel(objects[objectIndex], colors.gold);
     }
-
 
     var x_val = 2.6 / Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 13.5)); 
     var z_val = 2.6 / Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + 13.5)); 
@@ -564,11 +507,7 @@ function makeCarHeadlights(angle_in_degrees,headlightsOn){
     modelview = prevModelview;
 
 
-    /* 
-    ####################################################
-    ############# RIGHT HEADLIGHT #######################
-    ####################################################
-    */
+    /* ############# RIGHT HEADLIGHT ####################### */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 4;
 
@@ -592,11 +531,7 @@ function makeCarHeadlights(angle_in_degrees,headlightsOn){
 
 
 function makeCarAxis(angle_in_degrees){
-    /* 
-    ####################################################
-    ############# FRONT AXIS ############################
-    ####################################################
-    */
+    /* ############# FRONT AXIS ############################ */
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 4;
     installModel(objects[objectIndex], colors.gold);
@@ -611,11 +546,7 @@ function makeCarAxis(angle_in_degrees){
     modelview = prevModelview;
 
 
-    /* 
-    ####################################################
-    ############# REAR AXIS ############################
-    ####################################################
-    */
+    /* ############# REAR AXIS ############################ */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 4;
     installModel(objects[objectIndex], colors.gold);
@@ -709,7 +640,6 @@ function makeTrees(){
     makeTree(0.5 ,  6.5, -1.2,  0.0); 
     makeTree(0.4 ,  8.0, -1.5, -1.5); 
 }
-
 
 
 function draw(){
