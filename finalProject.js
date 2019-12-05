@@ -33,19 +33,7 @@ var objects = [         // Objects for display
     cube(), ring(), uvSphere(), uvTorus(), uvCylinder(), uvCone(), 
 ];
 
-var colors = {
-    red: [0.6,0,0], 
-    dark_red: [0.5, 0, 0], 
-    yellow: [0.8,0.8,0], 
-    green: [0,0.5,0], 
-    dark_green: [0.0,0.25,0.0], 
-    brown: [60/256,25/256,0], 
-    grey: [100/256, 100/256, 100/256], 
-    dark_grey: [50/256, 50/256, 50/256], 
-    black: [0,0,0], 
-    gold: [0.3,0.3,0.04],
-    blue: [0,0,1], 
-}
+
 
 
 function degToRad(degrees) {
@@ -59,10 +47,10 @@ function print(msg){
 
 
 function updateAngles(){
-    if(sun_angle == 0){
-        sun_angle = 359; 
+    if(sun_angle >= 359){
+        sun_angle = 0; 
     } else{
-        sun_angle -= 0.5; 
+        sun_angle += 0.5; 
     }
 
 
@@ -145,7 +133,7 @@ function initGL() {
     gl.useProgram(prog);
     a_coords_loc =  gl.getAttribLocation(prog, "a_coords");
     a_normal_loc =  gl.getAttribLocation(prog, "a_normal");
-    my_color      =  gl.getAttribLocation(prog,"my_color"); 
+    my_color      =  gl.getAttribLocation(prog,"a_color"); 
 
     u_modelview = gl.getUniformLocation(prog, "modelview");
     u_projection = gl.getUniformLocation(prog, "projection");
@@ -161,13 +149,16 @@ function initGL() {
     a_normal_buffer = gl.createBuffer();
     index_buffer = gl.createBuffer();
     color_buffer = gl.createBuffer();
+
+
+    var matrix
     
 
     gl.enable(gl.DEPTH_TEST);
-    gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
-    gl.uniform4f(u_diffuseColor, 1, 1, 1, 1);
-    gl.uniform1f(u_specularExponent, 10);
-    gl.uniform4f(u_lightPosition, 0, 0, 0, 1);
+    // gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
+    // gl.uniform4f(u_diffuseColor, 1, 1, 1, 1);
+    // gl.uniform1f(u_specularExponent, 10);
+    // gl.uniform4f(u_lightPosition, 0, 0, 0, 1);
 }
 
 
@@ -217,21 +208,30 @@ function getColorArray(number, rgb_vals){
 function installModel(modelData, color_arr) {
     var color_array = getColorArray(modelData.vertexPositions.length, color_arr)
 
+    // a verticies
     gl.bindBuffer(gl.ARRAY_BUFFER, a_coords_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, modelData.vertexPositions, gl.STATIC_DRAW);
     gl.vertexAttribPointer(a_coords_loc, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(a_coords_loc);
 
+    // add normals
     gl.bindBuffer(gl.ARRAY_BUFFER, a_normal_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, modelData.vertexNormals, gl.STATIC_DRAW);
     gl.vertexAttribPointer(a_normal_loc, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(a_normal_loc);
 
+    // add color
     gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer); 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(color_array), gl.STATIC_DRAW); 
     gl.vertexAttribPointer(my_color, 3, gl.FLOAT, false,0,0) ;
     gl.enableVertexAttribArray(my_color);
 
+    gl.uniform4f(u_diffuseColor, color_arr[0], color_arr[1], color_arr[2], 1);
+    gl.uniform3f(u_specularColor, color_arr[0], color_arr[1], color_arr[2]);
+    gl.uniform1f(u_specularExponent, 10);
+
+
+    // add indicies
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,index_buffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, modelData.indices, gl.STATIC_DRAW);
 }
@@ -350,29 +350,6 @@ function makePole(lightOn){
 
     update_uniform(modelview,projection, objectIndex);
     modelview = prevModelview;
-}
-
-
-function makeSun(shining, angle_in_degrees){
-
-    var prevModelview = Object.assign([], modelview); 
-    var objectIndex = 2;
-
-    if(shining == true){
-        installModel(objects[objectIndex], colors.yellow);
-    }else{
-        installModel(objects[objectIndex], colors.dark_grey);
-    }
-
-
-    var x_val = 4.3 * Math.cos(degToRad(angle_in_degrees)); 
-    var y_val = 4.3 * Math.sin(degToRad(angle_in_degrees)); 
-    mat4.translate(modelview,modelview,[x_val,y_val,0]); 
-    mat4.scale(modelview, modelview, [0.6,0.6,0.6]);
-
-    update_uniform(modelview,projection, objectIndex);
-    modelview = prevModelview;
-
 }
 
 
@@ -642,6 +619,27 @@ function makeTrees(){
 }
 
 
+function makeSun(shining, angle_in_degrees){
+    var prevModelview = Object.assign([], modelview); 
+    var objectIndex = 2;
+
+    if(shining == true){
+        installModel(objects[objectIndex], colors.yellow);
+    }else{
+        installModel(objects[objectIndex], colors.dark_grey);
+    }
+
+    var x_val = 4.3 * Math.cos(degToRad(angle_in_degrees)); 
+    var y_val = 4.3 * Math.sin(degToRad(angle_in_degrees)); 
+    mat4.translate(modelview,modelview,[x_val,y_val,0]); 
+    mat4.scale(modelview, modelview, [0.6,0.6,0.6]);
+
+    update_uniform(modelview,projection, objectIndex);
+    modelview = prevModelview;
+
+}
+
+
 function draw(){
     gl.clearColor(0,0,0,1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -660,17 +658,35 @@ function draw(){
         makePole(true); 
         makeSun(false, sun_angle); 
         makeCar(car_angle, true);
+        gl.uniform4fv(u_lightPosition, [0,0,0,0]);
     }else{
         // LIGHT
         makePole(false); 
         makeSun(true, sun_angle); 
         makeCar(car_angle, false);
+
+        var x_val =  Math.cos(degToRad(sun_angle)); 
+        var y_val =  Math.sin(degToRad(sun_angle)); 
+        gl.uniform4fv(u_lightPosition, [x_val, y_val, 0, 0]);
     }
+
+
+
+
 }
 
-
-
-
-
+var colors = {
+    red: [0.6,0,0], 
+    dark_red: [0.5, 0, 0], 
+    yellow: [0.8,0.8,0], 
+    green: [0,0.35,0], 
+    dark_green: [0.0,0.25,0.0], 
+    brown: [60/256,25/256,0], 
+    grey: [100/256, 100/256, 100/256], 
+    dark_grey: [50/256, 50/256, 50/256], 
+    black: [0,0,0], 
+    gold: [0.3,0.3,0.04],
+    blue: [0,0,1], 
+}
 
 
