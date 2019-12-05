@@ -21,10 +21,32 @@ var projection = mat4.create();
 var modelview; 
 var normalMatrix = mat3.create();
 var rotator;
-
 var my_color; 
+
+
 var sun_angle = 91; 
 var car_angle = 90; 
+var annimate = true; 
+
+var objects = [         // Objects for display
+  //0       1       2           3          4             5 
+    cube(), ring(), uvSphere(), uvTorus(), uvCylinder(), uvCone(), 
+];
+
+var colors = {
+    red: [0.6,0,0], 
+    dark_red: [0.5, 0, 0], 
+    yellow: [0.8,0.8,0], 
+    green: [0,0.5,0], 
+    dark_green: [0.0,0.25,0.0], 
+    brown: [60/256,25/256,0], 
+    grey: [100/256, 100/256, 100/256], 
+    dark_grey: [50/256, 50/256, 50/256], 
+    black: [0,0,0], 
+    gold: [0.3,0.3,0.04],
+    blue: [0,0,1], 
+}
+
 
 function degToRad(degrees) {
   return degrees * Math.PI / 180;
@@ -33,6 +55,22 @@ function degToRad(degrees) {
 
 function print(msg){
     console.log(msg); 
+}
+
+
+function updateAngles(){
+    if(sun_angle == 0){
+        sun_angle = 359; 
+    } else{
+        sun_angle -= 0.5; 
+    }
+
+
+    if(car_angle >= 359){
+        car_angle = 0; 
+    } else{
+        car_angle += 0.7;
+    }
 }
 
 
@@ -374,7 +412,7 @@ function makeCarBody(angle_in_degrees){
     */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 0;
-    installModel(objects[objectIndex], colors.brown);
+    installModel(objects[objectIndex], colors.dark_red);
 
     var x_val = 2.3 * Math.cos(degToRad(angle_in_degrees)); 
     var z_val = 2.3 * Math.sin(degToRad(angle_in_degrees)); 
@@ -594,98 +632,72 @@ function makeCarAxis(angle_in_degrees){
 }
 
 
-
-
-
-function makeCar(angle_in_degrees, headlightsOn){
-    var prevModelview; 
-    var objectIndex; 
-
-    makeCarBody(angle_in_degrees);  
-    // makeCarWheels(angle_in_degrees); 
-    makeCarHeadlights(angle_in_degrees, headlightsOn); 
-    makeCarAxis(angle_in_degrees); 
-
-
-    /* 
-        ####################################################
-        ############# SPOKE ONE ############################
-        ####################################################
-    */
-    prevModelview = Object.assign([], modelview); 
-    objectIndex = 4;
+function makeCarSpoke(angle_in_degrees, off_axis, distance, angle_from_center_of_car ){
+    var prevModelview = Object.assign([], modelview); 
+    var objectIndex = 4;
     installModel(objects[objectIndex], colors.gold);
-    var x_val = 2.75/ Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 9.7)); 
-    var z_val = 2.75 / Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + 9.7)); 
-    mat4.translate(modelview,modelview,[x_val, -0.53, z_val]); 
-
-    mat4.rotate(modelview, modelview, degToRad(90), [1,0,0])
-    mat4.rotate(modelview, modelview, degToRad(90), [0,1,0])
-    // mat4.rotate(modelview, modelview, degToRad(angle_in_degrees), [1,1,0])
-    mat4.scale(modelview, modelview, [0.01,0.01,0.2]);
-
-    update_uniform(modelview,projection, objectIndex);
-    modelview = prevModelview;
-
-
-    /* 
-        ####################################################
-        ############# SPOKE TWO ############################
-        ####################################################
-    */
-    prevModelview = Object.assign([], modelview); 
-    objectIndex = 4;
-    installModel(objects[objectIndex], colors.gold);
-    var x_val = 2.75/ Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 9.7)); 
-    var z_val = 2.75 / Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + 9.7)); 
-    mat4.translate(modelview,modelview,[x_val, -0.53, z_val]); 
-
-    mat4.rotate(modelview, modelview, degToRad(90), [1,0,0])
-    mat4.rotate(modelview, modelview, degToRad(45), [0,1,0])
-    mat4.scale(modelview, modelview, [0.01,0.01,0.2]);
-
-    update_uniform(modelview,projection, objectIndex);
-    modelview = prevModelview;
-
-
-    /* 
-        ####################################################
-        ############# SPOKE THREE ############################
-        ####################################################
-    */
     
-    prevModelview = Object.assign([], modelview); 
-    objectIndex = 4;
-    installModel(objects[objectIndex], colors.gold);
-    var x_val = 2.75/ Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 9.7)); 
-    var z_val = 2.75 / Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + 9.7)); 
+    var x_val = distance/ Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + angle_from_center_of_car)); 
+    var z_val = distance/ Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + angle_from_center_of_car)); 
     mat4.translate(modelview,modelview,[x_val, -0.53, z_val]); 
 
-    mat4.rotate(modelview, modelview, degToRad(90), [1,0,0])
-    mat4.rotate(modelview, modelview, degToRad(-135), [0,1,0])
-    mat4.rotate(modelview, modelview, degToRad(angle_in_degrees), [1,1,0])
-    mat4.scale(modelview, modelview, [0.01,0.01,0.2]);
+    // ROTATE WITH THE CAR
+    mat4.rotate(modelview, modelview, degToRad(-angle_in_degrees), ([0,1,0]));
+    // ROTATE THE TIRE
+    mat4.rotate(modelview, modelview, degToRad(angle_in_degrees + off_axis), ([1,0,0]));
+
+    mat4.scale(modelview, modelview, [0.01,0.01,0.3]);
 
     update_uniform(modelview,projection, objectIndex);
     modelview = prevModelview;
-
 }
 
 
+function makeAllCarSpokes(angle_in_degrees, 
+                          innerAngle, innerDistance, 
+                          outerAngle, outerDistance){
+
+    // front left wheel spokes
+    makeCarSpoke(angle_in_degrees, 0  , outerDistance,  outerAngle);
+    makeCarSpoke(angle_in_degrees, 120, outerDistance,  outerAngle);
+    makeCarSpoke(angle_in_degrees, 240, outerDistance,  outerAngle);
+
+    // rear left wheel spokes
+    makeCarSpoke(angle_in_degrees, 0  , outerDistance, -outerAngle);
+    makeCarSpoke(angle_in_degrees, 120, outerDistance, -outerAngle);
+    makeCarSpoke(angle_in_degrees, 240, outerDistance, -outerAngle);
 
 
+    // front right wheel spokes
+    makeCarSpoke(angle_in_degrees, 0  , innerDistance, innerAngle);
+    makeCarSpoke(angle_in_degrees, 120, innerDistance, innerAngle);
+    makeCarSpoke(angle_in_degrees, 240, innerDistance, innerAngle);
+
+    // rear right wheel spokes
+    makeCarSpoke(angle_in_degrees, 0  , innerDistance, -innerAngle);
+    makeCarSpoke(angle_in_degrees, 120, innerDistance, -innerAngle);
+    makeCarSpoke(angle_in_degrees, 240, innerDistance, -innerAngle);
+}
 
 
+function makeCar(angle_in_degrees, headlightsOn){
+    makeCarBody(angle_in_degrees);  
+    makeCarWheels(angle_in_degrees); 
+    makeCarHeadlights(angle_in_degrees, headlightsOn); 
+    makeCarAxis(angle_in_degrees); 
 
-function draw(){
-    gl.clearColor(0,0,0,1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    mat4.perspective(projection,Math.PI/5,1,10,20);   
-    modelview = rotator.getViewMatrix();
+    var outerAngle = 9.7; 
+    var outerDistance = 2.75; 
+    var innerAngle = 14.4; 
+    var innerDistance = 1.87; 
 
-    // updateAngles(); 
-    makeRoadBase();
+    makeAllCarSpokes(angle_in_degrees,
+                     innerAngle, innerDistance, 
+                     outerAngle, outerDistance); 
+}
 
+
+function makeTrees(){
     //       size,    x,    y,    z
     makeTree(0.8 , -0.8, -0.7,  1.5); 
     makeTree(0.5 , -0.8, -1.2, -0.1); 
@@ -696,6 +708,22 @@ function draw(){
     makeTree(0.3 , 10.6, -2.1,  2.0); 
     makeTree(0.5 ,  6.5, -1.2,  0.0); 
     makeTree(0.4 ,  8.0, -1.5, -1.5); 
+}
+
+
+
+function draw(){
+    gl.clearColor(0,0,0,1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    mat4.perspective(projection,Math.PI/5,1,10,20);   
+    modelview = rotator.getViewMatrix();
+
+    if (annimate == true){
+        updateAngles(); 
+    }
+
+    makeRoadBase();
+    makeTrees();
 
     if(sun_angle > 180){
         // DARKNESS
@@ -708,48 +736,11 @@ function draw(){
         makeSun(true, sun_angle); 
         makeCar(car_angle, false);
     }
-
 }
 
 
 
 
-var objects = [         // Objects for display
-  //0       1       2           3          4             5 
-    cube(), ring(), uvSphere(), uvTorus(), uvCylinder(), uvCone(), 
-];
-
-var colors = {
-    red: [0.6,0,0], 
-    yellow: [0.8,0.8,0], 
-    green: [0,0.5,0], 
-    dark_green: [0.0,0.25,0.0], 
-    brown: [60/256,25/256,0], 
-    grey: [100/256, 100/256, 100/256], 
-    dark_grey: [50/256, 50/256, 50/256], 
-    black: [0,0,0], 
-    gold: [0.3,0.3,0.04],
-    blue: [0,0,1], 
-}
 
 
-function updateAngles(){
-    if(sun_angle == 0){
-        sun_angle = 359; 
-    } else{
-        sun_angle -= 0.5; 
-    }
-
-    if(car_angle >= 359){
-        car_angle = 0; 
-    } else{
-        car_angle += 0.7;
-    }
-    
-    // if(car_angle >= 359){
-    //     car_angle = 0; 
-    // } else{
-    //     car_angle += 0.2;
-    // }
-}
 
