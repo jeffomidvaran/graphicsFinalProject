@@ -23,16 +23,37 @@ var normalMatrix = mat3.create();
 var rotator;
 var my_color; 
 
+var u_poleLightPosition; 
+var u_sunLightPosition; 
+var u_sunIsUp; 
+var u_leftHeadlightPosition; 
+var u_rightHeadlightPosition; 
 
-var sun_angle = 91; 
-var car_angle = 90; 
+var sun_angle = 180; 
+var car_angle = 270; 
 var annimate = true; 
+var postionOfPole = [0,0.29,0,0]; 
+
 
 var objects = [         // Objects for display
   //0       1       2           3          4             5 
     cube(), ring(), uvSphere(), uvTorus(), uvCylinder(), uvCone(), 
 ];
 
+
+var colors = {
+    red: [0.6,0,0], 
+    dark_red: [0.5, 0, 0], 
+    yellow: [1,1,0], 
+    green: [0,0.35,0], 
+    dark_green: [0.0,0.25,0.0], 
+    brown: [60/256,25/256,0], 
+    grey: [100/256, 100/256, 100/256], 
+    dark_grey: [50/256, 50/256, 50/256], 
+    black: [0,0,0], 
+    gold: [0.3,0.3,0.04],
+    blue: [0,0,1], 
+}
 
 
 
@@ -128,40 +149,6 @@ function createProgram(gl, vertexShaderID, fragmentShaderID) {
 }
 
 
-function initGL() {
-    var prog = createProgram(gl,"vshader-source","fshader-source");
-    gl.useProgram(prog);
-    a_coords_loc =  gl.getAttribLocation(prog, "a_coords");
-    a_normal_loc =  gl.getAttribLocation(prog, "a_normal");
-    my_color      =  gl.getAttribLocation(prog,"a_color"); 
-
-    u_modelview = gl.getUniformLocation(prog, "modelview");
-    u_projection = gl.getUniformLocation(prog, "projection");
-
-    u_normalMatrix =  gl.getUniformLocation(prog, "normalMatrix");
-    u_lightPosition=  gl.getUniformLocation(prog, "lightPosition");
-
-    u_diffuseColor =  gl.getUniformLocation(prog, "diffuseColor");
-    u_specularColor =  gl.getUniformLocation(prog, "specularColor");
-    u_specularExponent = gl.getUniformLocation(prog, "specularExponent");
-
-    a_coords_buffer = gl.createBuffer();
-    a_normal_buffer = gl.createBuffer();
-    index_buffer = gl.createBuffer();
-    color_buffer = gl.createBuffer();
-
-
-    var matrix
-    
-
-    gl.enable(gl.DEPTH_TEST);
-    // gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
-    // gl.uniform4f(u_diffuseColor, 1, 1, 1, 1);
-    // gl.uniform1f(u_specularExponent, 10);
-    // gl.uniform4f(u_lightPosition, 0, 0, 0, 1);
-}
-
-
 function init() {
     try {
         var canvas = document.getElementById("myGLCanvas");
@@ -185,6 +172,7 @@ function init() {
         return;
     }
 
+    document.getElementById("animate").checked = true; 
     rotator = new TrackballRotator(canvas, draw, 15);
     tick();
 }
@@ -202,38 +190,6 @@ function getColorArray(number, rgb_vals){
         arr.push.apply(arr, rgb_vals);
     }
     return arr; 
-}
-
-
-function installModel(modelData, color_arr) {
-    var color_array = getColorArray(modelData.vertexPositions.length, color_arr)
-
-    // a verticies
-    gl.bindBuffer(gl.ARRAY_BUFFER, a_coords_buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, modelData.vertexPositions, gl.STATIC_DRAW);
-    gl.vertexAttribPointer(a_coords_loc, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(a_coords_loc);
-
-    // add normals
-    gl.bindBuffer(gl.ARRAY_BUFFER, a_normal_buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, modelData.vertexNormals, gl.STATIC_DRAW);
-    gl.vertexAttribPointer(a_normal_loc, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(a_normal_loc);
-
-    // add color
-    gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer); 
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(color_array), gl.STATIC_DRAW); 
-    gl.vertexAttribPointer(my_color, 3, gl.FLOAT, false,0,0) ;
-    gl.enableVertexAttribArray(my_color);
-
-    gl.uniform4f(u_diffuseColor, color_arr[0], color_arr[1], color_arr[2], 1);
-    gl.uniform3f(u_specularColor, color_arr[0], color_arr[1], color_arr[2]);
-    gl.uniform1f(u_specularExponent, 10);
-
-
-    // add indicies
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,index_buffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, modelData.indices, gl.STATIC_DRAW);
 }
 
 
@@ -345,7 +301,7 @@ function makePole(lightOn){
     }else{
         installModel(objects[objectIndex], colors.dark_grey);
     }
-    mat4.translate(modelview,modelview,[0,0.29,0]); 
+    mat4.translate(modelview,modelview,postionOfPole); 
     mat4.scale(modelview, modelview, [0.3,0.3,0.3]);
 
     update_uniform(modelview,projection, objectIndex);
@@ -646,7 +602,8 @@ function draw(){
     mat4.perspective(projection,Math.PI/5,1,10,20);   
     modelview = rotator.getViewMatrix();
 
-    if (annimate == true){
+
+    if(document.getElementById("animate").checked){
         updateAngles(); 
     }
 
@@ -658,35 +615,115 @@ function draw(){
         makePole(true); 
         makeSun(false, sun_angle); 
         makeCar(car_angle, true);
-        gl.uniform4fv(u_lightPosition, [0,0,0,0]);
+        // gl.uniform4fv(u_lightPosition, [0,0,0,0]);
+        gl.uniform4f(u_sunLightPosition, 0, 0,0 ,0); 
+        gl.uniform1i(u_sunIsUp, 0);     
     }else{
         // LIGHT
         makePole(false); 
         makeSun(true, sun_angle); 
         makeCar(car_angle, false);
 
-        var x_val =  Math.cos(degToRad(sun_angle)); 
-        var y_val =  Math.sin(degToRad(sun_angle)); 
-        gl.uniform4fv(u_lightPosition, [x_val, y_val, 0, 0]);
+
+        var x_val = 4.3 * Math.cos(degToRad(sun_angle)); 
+        var y_val = 4.3 * Math.sin(degToRad(sun_angle)); 
+        gl.uniform4f(u_sunLightPosition, x_val, y_val,0 ,0); 
+
+        // left headlight
+        var x_val = 2.6 / Math.cos(degToRad(10)) * Math.cos(degToRad(sun_angle + 13.5)); 
+        var z_val = 2.6 / Math.cos(degToRad(10)) * Math.sin(degToRad(sun_angle + 13.5)); 
+        gl.uniform4f(u_leftHeadlightPosition, x_val, 0,z_val ,0); 
+
+        // right headlight
+        var x_val = 2.1 / Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 17)); 
+        var z_val = 2.1 / Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + 17)); 
+        gl.uniform4f(u_rightHeadlightPosition, x_val, 0,z_val ,0); 
+        
+
+        gl.uniform1i(u_sunIsUp, 1);     
     }
 
 
 
-
-}
-
-var colors = {
-    red: [0.6,0,0], 
-    dark_red: [0.5, 0, 0], 
-    yellow: [0.8,0.8,0], 
-    green: [0,0.35,0], 
-    dark_green: [0.0,0.25,0.0], 
-    brown: [60/256,25/256,0], 
-    grey: [100/256, 100/256, 100/256], 
-    dark_grey: [50/256, 50/256, 50/256], 
-    black: [0,0,0], 
-    gold: [0.3,0.3,0.04],
-    blue: [0,0,1], 
 }
 
 
+
+function initGL() {
+    var prog = createProgram(gl,"vshader-source","fshader-source");
+    gl.useProgram(prog);
+    a_coords_loc =  gl.getAttribLocation(prog, "a_position");
+    a_normal_loc =  gl.getAttribLocation(prog, "a_normal");
+    my_color      =  gl.getAttribLocation(prog,"a_color"); 
+
+    u_modelview = gl.getUniformLocation(prog, "modelview");
+    u_projection = gl.getUniformLocation(prog, "projection");
+
+    u_normalMatrix =  gl.getUniformLocation(prog, "normalMatrix");
+    u_lightPosition=  gl.getUniformLocation(prog, "lightPosition");
+
+    u_diffuseColor =  gl.getUniformLocation(prog, "diffuseColor");
+    u_specularColor =  gl.getUniformLocation(prog, "specularColor");
+    u_specularExponent = gl.getUniformLocation(prog, "specularExponent");
+
+
+    u_poleLightPosition = gl.getUniformLocation(prog, "poleLightPosition");
+    u_sunLightPosition = gl.getUniformLocation(prog, "sunLightPosition");
+    u_leftHeadlightPosition = gl.getUniformLocation(prog, "leftHeadlightPosition"); 
+    u_rightHeadlightPosition = gl.getUniformLocation(prog, "rightHeadlightPosition"); 
+
+
+
+
+    u_sunIsUp = gl.getUniformLocation(prog, "sunIsUp"); 
+
+
+
+    a_coords_buffer = gl.createBuffer();
+    a_normal_buffer = gl.createBuffer();
+    index_buffer = gl.createBuffer();
+    color_buffer = gl.createBuffer();
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.uniform4f(u_poleLightPosition, postionOfPole[0], postionOfPole[1],postionOfPole[2],postionOfPole[3]); 
+    // gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
+    // gl.uniform4f(u_diffuseColor, 1, 1, 1, 1);
+    // gl.uniform1f(u_specularExponent, 10);
+    gl.uniform4f(u_lightPosition, 0, 0, 0, 0);
+}
+
+
+function installModel(modelData, color_arr) {
+    var color_array = getColorArray(modelData.vertexPositions.length, color_arr)
+
+    // a verticies
+    gl.bindBuffer(gl.ARRAY_BUFFER, a_coords_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, modelData.vertexPositions, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(a_coords_loc, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_coords_loc);
+
+    // add normals
+    gl.bindBuffer(gl.ARRAY_BUFFER, a_normal_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, modelData.vertexNormals, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(a_normal_loc, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_normal_loc);
+
+    // add color
+    gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer); 
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(color_array), gl.STATIC_DRAW); 
+    gl.vertexAttribPointer(my_color, 3, gl.FLOAT, false,0,0) ;
+    gl.enableVertexAttribArray(my_color);
+
+    gl.uniform4f(u_diffuseColor, color_arr[0], color_arr[1], color_arr[2], 1);
+    
+
+    
+
+
+
+
+
+    // add indicies
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,index_buffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, modelData.indices, gl.STATIC_DRAW);
+}
