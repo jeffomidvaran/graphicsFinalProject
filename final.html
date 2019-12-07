@@ -19,99 +19,28 @@
 		attribute vec3 a_normal;
 		attribute vec3 a_color;
 
-		uniform mat4 modelview;  // u_world
-		uniform mat4 projection; // 
+		uniform mat4 modelview;  
+		uniform mat4 projection; 
 
 		uniform mat3 normalMatrix;
-		uniform vec4 lightPosition;
-
-		uniform vec4 diffuseColor;
-		uniform vec3 specularColor;
-		uniform float specularExponent;
-
-		uniform vec4 poleLightPosition;
-		uniform vec4 sunLightPosition; 
-		uniform vec4 leftHeadlightPosition; 
-		uniform vec4 rightHeadlightPosition; 
-
-		uniform int sunIsUp; 
 		
 		varying vec4 v_color;
+		varying vec3 v_normal;  
+		varying vec3 v_position; 
+		varying vec4 v_eyeCoords; 
 
 		void main(){
-
 			vec4 position = vec4(a_position,1.0);
 			vec4 eyeCoords = modelview * position;
 			gl_Position = projection * eyeCoords;
 
-
-			// #######################################################################
-			// ######## DEFINE N,L,R,V ############################################### 
-			// #######################################################################
-			vec3 N, L, R, V, pL, sL, left_hL, right_hL;  
-
-			N = normalize( normalMatrix * a_normal );
-
-			if ( lightPosition.w == 0.0 ) {
-				L = normalize( lightPosition.xyz );
-				pL = normalize(poleLightPosition.xyz);
-				sL = normalize(sunLightPosition.xyz);
-				left_hL = normalize(leftHeadlightPosition.xyz); 
-			}
-			else {
-				L = normalize( lightPosition.xyz/lightPosition.w - eyeCoords.xyz );
-				pL = normalize(poleLightPosition.xyz/poleLightPosition.w - eyeCoords.xyz);
-				sL = normalize(sunLightPosition.xyz/sunLightPosition.w - eyeCoords.xyz);
-				left_hL =normalize(leftHeadlightPosition.xyz/leftHeadlightPosition.w - eyeCoords.xyz); 
-			}
-
-			R = -reflect(L,N);
-			V = normalize( -eyeCoords.xyz);   
-			
-
-			// #######################################################################
-			// ############## Lighting ############################################### 
-			// #######################################################################
-			
-			float kd = 1.0;  // diffuse intensity
-			float poleIntensity = 0.7;  // diffuse intensity
-
-
-			float a = 0.25;
-			float b = 0.25; 
-			float c = 0.5; 
-			float dist_pole_to_current = pow(a_position.x - poleLightPosition.x, 2.0) +
-											  pow(a_position.y - poleLightPosition.y, 2.0) +
-											  pow(a_position.z - poleLightPosition.z, 2.0) ;
-
-			float f_att = 1.0/(a+b*dist_pole_to_current + pow(c * dist_pole_to_current,2.0)); 
-			
-			vec4 poleLight = poleIntensity * f_att * diffuseColor * max(dot(N,pL), 0.0);
-			vec4 sunLight = kd * diffuseColor * max(dot(N,sL), 0.0);
-			vec4 leftHeadlight = kd * diffuseColor * max(dot(N,left_hL), 0.0);
-
-								
-			// SUN LIGHTING 
-			v_color = vec4(a_color * vec3(0.6,0.6,0.6), 1) + sunLight; 
-
-			if(sunIsUp == 0){
-
-				// POLE LIGHTING
-				v_color = v_color + poleLight * 0.2; 
-
-				// HEADLIGHTS
-				// v_color = v_color + leftHeadlight * 2.0; 
-
-				
-
-			}
-
-
-
-
-
-
+			v_position = a_position; 
+			v_eyeCoords = eyeCoords; 
+			v_normal = normalize(normalMatrix * a_normal);
+			v_color = vec4(a_color * vec3(0.6,0.6,0.6), 1); 
 		}
+
+
 	</script>
 	
 
@@ -123,10 +52,65 @@
 		#endif
 
 
+		uniform mat4 modelview;  
+		uniform int sunIsUp; 
+
+		uniform vec4 sunLightPosition; 
+		uniform vec4 diffuseColor;
+		uniform vec3 specularColor;
+		uniform float specularExponent;
+
+		uniform vec4 poleLightPosition; 
+
+
 		varying vec4 v_color;
+		varying vec3 v_normal;  
+		varying vec4 v_eyeCoords; 
+		varying vec3 v_position; 
 
 		void main() {
-			gl_FragColor = v_color;
+
+			vec3 N; 
+			N = v_normal; 
+
+			// #################################### 
+			// ######## Sun Light ################# 
+			// #################################### 
+			vec3 SL, R, V; 
+			SL = normalize(sunLightPosition.xyz); 
+			R = -reflect(SL,N);
+			V = normalize( -v_eyeCoords.xyz); 
+
+			vec4 ambientLight = 0.1 * diffuseColor;
+			vec4 diffuseLight = 0.8 * diffuseColor * max(dot(N,SL), 0.0); 
+			vec4 specularLight= 0.4 * vec4(specularColor.xyz, 1.0) * 
+							    pow(max(dot(R,V), 0.0), specularExponent); 
+
+			vec4 sunLight = ambientLight + diffuseLight + specularLight; 
+
+			// #################################### 
+			// ######## STREET LIGHT ############## 
+			// #################################### 
+
+			vec3 PL; 
+			PL = normalize(poleLightPosition.xyz);
+
+			float a = 0.25;
+            float b = 0.25; 
+            float c = 0.5; 
+            float dist_pole_to_current = pow(v_position.x - poleLightPosition.x, 2.0) +
+                                         pow(v_position.y - poleLightPosition.y, 2.0) +
+                                         pow(v_position.z - poleLightPosition.z, 2.0) ;
+
+			float f_att = 1.0/(a+ b*dist_pole_to_current + pow(c * dist_pole_to_current,2.0)); 
+			vec4 poleLight = 0.3 * f_att * diffuseColor * max(dot(N,PL), 0.0);
+
+
+			if(sunIsUp ==1 ){
+				gl_FragColor = v_color + sunLight;
+			}else{
+				gl_FragColor = v_color + poleLight;
+			}
 		}
 
 	</script>

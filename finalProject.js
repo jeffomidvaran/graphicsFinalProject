@@ -12,7 +12,6 @@ var index_buffer;       // Buffer to hold vetex indices from model.
 var u_diffuseColor;     // Locations of uniform variables in the shader program
 var u_specularColor;
 var u_specularExponent;
-var u_lightPosition;
 var u_modelview;
 var u_projection;
 var u_normalMatrix;    
@@ -29,10 +28,10 @@ var u_sunIsUp;
 var u_leftHeadlightPosition; 
 var u_rightHeadlightPosition; 
 
-var sun_angle = 180; 
+var sun_angle = 90; 
 var car_angle = 270; 
 var annimate = true; 
-var postionOfPole = [0,0.29,0,0]; 
+var postionOfPole = [0,0.29,0,1]; 
 
 
 var objects = [         // Objects for display
@@ -596,59 +595,6 @@ function makeSun(shining, angle_in_degrees){
 }
 
 
-function draw(){
-    gl.clearColor(0,0,0,1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    mat4.perspective(projection,Math.PI/5,1,10,20);   
-    modelview = rotator.getViewMatrix();
-
-
-    if(document.getElementById("animate").checked){
-        updateAngles(); 
-    }
-
-    makeRoadBase();
-    makeTrees();
-
-    if(sun_angle > 180){
-        // DARKNESS
-        makePole(true); 
-        makeSun(false, sun_angle); 
-        makeCar(car_angle, true);
-        // gl.uniform4fv(u_lightPosition, [0,0,0,0]);
-        gl.uniform4f(u_sunLightPosition, 0, 0,0 ,0); 
-        gl.uniform1i(u_sunIsUp, 0);     
-    }else{
-        // LIGHT
-        makePole(false); 
-        makeSun(true, sun_angle); 
-        makeCar(car_angle, false);
-
-
-        var x_val = 4.3 * Math.cos(degToRad(sun_angle)); 
-        var y_val = 4.3 * Math.sin(degToRad(sun_angle)); 
-        gl.uniform4f(u_sunLightPosition, x_val, y_val,0 ,0); 
-
-        // left headlight
-        var x_val = 2.6 / Math.cos(degToRad(10)) * Math.cos(degToRad(sun_angle + 13.5)); 
-        var z_val = 2.6 / Math.cos(degToRad(10)) * Math.sin(degToRad(sun_angle + 13.5)); 
-        gl.uniform4f(u_leftHeadlightPosition, x_val, 0,z_val ,0); 
-
-        // right headlight
-        var x_val = 2.1 / Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 17)); 
-        var z_val = 2.1 / Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + 17)); 
-        gl.uniform4f(u_rightHeadlightPosition, x_val, 0,z_val ,0); 
-        
-
-        gl.uniform1i(u_sunIsUp, 1);     
-    }
-
-
-
-}
-
-
-
 function initGL() {
     var prog = createProgram(gl,"vshader-source","fshader-source");
     gl.useProgram(prog);
@@ -660,7 +606,6 @@ function initGL() {
     u_projection = gl.getUniformLocation(prog, "projection");
 
     u_normalMatrix =  gl.getUniformLocation(prog, "normalMatrix");
-    u_lightPosition=  gl.getUniformLocation(prog, "lightPosition");
 
     u_diffuseColor =  gl.getUniformLocation(prog, "diffuseColor");
     u_specularColor =  gl.getUniformLocation(prog, "specularColor");
@@ -686,10 +631,9 @@ function initGL() {
 
     gl.enable(gl.DEPTH_TEST);
     gl.uniform4f(u_poleLightPosition, postionOfPole[0], postionOfPole[1],postionOfPole[2],postionOfPole[3]); 
-    // gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
+    gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
+    gl.uniform1f(u_specularExponent, 10);
     // gl.uniform4f(u_diffuseColor, 1, 1, 1, 1);
-    // gl.uniform1f(u_specularExponent, 10);
-    gl.uniform4f(u_lightPosition, 0, 0, 0, 0);
 }
 
 
@@ -715,7 +659,7 @@ function installModel(modelData, color_arr) {
     gl.enableVertexAttribArray(my_color);
 
     gl.uniform4f(u_diffuseColor, color_arr[0], color_arr[1], color_arr[2], 1);
-    
+    gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
 
     
 
@@ -726,4 +670,54 @@ function installModel(modelData, color_arr) {
     // add indicies
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,index_buffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, modelData.indices, gl.STATIC_DRAW);
+}
+
+
+function draw(){
+    gl.clearColor(0,0,0,1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    mat4.perspective(projection,Math.PI/5,1,10,20);   
+    modelview = rotator.getViewMatrix();
+
+
+    if(document.getElementById("animate").checked){
+        updateAngles(); 
+    }
+
+    makeRoadBase();
+    makeTrees();
+
+    if(sun_angle > 180){
+        // DARKNESS
+        makePole(true); 
+        makeSun(false, sun_angle); 
+        makeCar(car_angle, true);
+        gl.uniform4f(u_sunLightPosition, 0, 0,0 ,1); 
+        gl.uniform1i(u_sunIsUp, 0);     
+    }else{
+        // LIGHT
+        makePole(false); 
+        makeSun(true, sun_angle); 
+        makeCar(car_angle, false);
+
+        gl.uniform1i(u_sunIsUp, 1);     
+
+        // sun light
+        var sun_dist = 4.3; 
+        var x_val = sun_dist * Math.cos(degToRad(sun_angle)); 
+        var y_val = sun_dist * Math.sin(degToRad(sun_angle)); 
+        gl.uniform4f(u_sunLightPosition, x_val, y_val,0 ,0); 
+
+        // // left headlight
+        // var x_val = 2.6 / Math.cos(degToRad(10)) * Math.cos(degToRad(sun_angle + 13.5)); 
+        // var z_val = 2.6 / Math.cos(degToRad(10)) * Math.sin(degToRad(sun_angle + 13.5)); 
+        // gl.uniform4f(u_leftHeadlightPosition, x_val, 0,z_val ,0); 
+
+        // // right headlight
+        // var x_val = 2.1 / Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 17)); 
+        // var z_val = 2.1 / Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + 17)); 
+        // gl.uniform4f(u_rightHeadlightPosition, x_val, 0,z_val ,0); 
+        
+
+    }
 }
