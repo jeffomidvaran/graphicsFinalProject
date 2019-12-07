@@ -25,13 +25,10 @@ var my_color;
 var u_poleLightPosition; 
 var u_sunLightPosition; 
 var u_sunIsUp; 
+var u_lightColoringInProgess;
 var u_leftHeadlightPosition; 
 var u_rightHeadlightPosition; 
 
-var sun_angle = 90; 
-var car_angle = 270; 
-var annimate = true; 
-var postionOfPole = [0,0.29,0,1]; 
 
 
 var objects = [         // Objects for display
@@ -40,19 +37,6 @@ var objects = [         // Objects for display
 ];
 
 
-var colors = {
-    red: [0.6,0,0], 
-    dark_red: [0.5, 0, 0], 
-    yellow: [1,1,0], 
-    green: [0,0.35,0], 
-    dark_green: [0.0,0.25,0.0], 
-    brown: [60/256,25/256,0], 
-    grey: [100/256, 100/256, 100/256], 
-    dark_grey: [50/256, 50/256, 50/256], 
-    black: [0,0,0], 
-    gold: [0.3,0.3,0.04],
-    blue: [0,0,1], 
-}
 
 
 
@@ -171,7 +155,7 @@ function init() {
         return;
     }
 
-    document.getElementById("animate").checked = true; 
+    document.getElementById("animate").checked = animationOn; 
     rotator = new TrackballRotator(canvas, draw, 15);
     tick();
 }
@@ -291,7 +275,9 @@ function makePole(lightOn){
     modelview = prevModelview;
 
 
+    
     /* ############## POLE TOP ############################ */
+    gl.uniform1i(u_lightColoringInProgess, 1);     
     prevModelview = Object.assign([], modelview); 
     objectIndex = 2;
 
@@ -300,11 +286,12 @@ function makePole(lightOn){
     }else{
         installModel(objects[objectIndex], colors.dark_grey);
     }
-    mat4.translate(modelview,modelview,postionOfPole); 
+    mat4.translate(modelview,modelview,[0,0.29,0,1]); 
     mat4.scale(modelview, modelview, [0.3,0.3,0.3]);
 
     update_uniform(modelview,projection, objectIndex);
     modelview = prevModelview;
+    gl.uniform1i(u_lightColoringInProgess, 0);     
 }
 
 
@@ -312,7 +299,7 @@ function makeCarBody(angle_in_degrees){
     /* ############## CAR BOTTOM ########################## */
     prevModelview = Object.assign([], modelview); 
     objectIndex = 0;
-    installModel(objects[objectIndex], colors.dark_red);
+    installModel(objects[objectIndex], colors.red);
 
     var x_val = 2.3 * Math.cos(degToRad(angle_in_degrees)); 
     var z_val = 2.3 * Math.sin(degToRad(angle_in_degrees)); 
@@ -575,6 +562,7 @@ function makeTrees(){
 
 
 function makeSun(shining, angle_in_degrees){
+    gl.uniform1i(u_lightColoringInProgess, 1);     
     var prevModelview = Object.assign([], modelview); 
     var objectIndex = 2;
 
@@ -592,6 +580,7 @@ function makeSun(shining, angle_in_degrees){
     update_uniform(modelview,projection, objectIndex);
     modelview = prevModelview;
 
+    gl.uniform1i(u_lightColoringInProgess, 0);     
 }
 
 
@@ -612,16 +601,13 @@ function initGL() {
     u_specularExponent = gl.getUniformLocation(prog, "specularExponent");
 
 
-    u_poleLightPosition = gl.getUniformLocation(prog, "poleLightPosition");
     u_sunLightPosition = gl.getUniformLocation(prog, "sunLightPosition");
     u_leftHeadlightPosition = gl.getUniformLocation(prog, "leftHeadlightPosition"); 
     u_rightHeadlightPosition = gl.getUniformLocation(prog, "rightHeadlightPosition"); 
 
 
-
-
     u_sunIsUp = gl.getUniformLocation(prog, "sunIsUp"); 
-
+    u_lightColoringInProgess = gl.getUniformLocation(prog, "lightColoringInProgress"); 
 
 
     a_coords_buffer = gl.createBuffer();
@@ -630,10 +616,9 @@ function initGL() {
     color_buffer = gl.createBuffer();
 
     gl.enable(gl.DEPTH_TEST);
-    gl.uniform4f(u_poleLightPosition, postionOfPole[0], postionOfPole[1],postionOfPole[2],postionOfPole[3]); 
     gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
     gl.uniform1f(u_specularExponent, 10);
-    // gl.uniform4f(u_diffuseColor, 1, 1, 1, 1);
+    gl.uniform1i(u_lightColoringInProgess, 0);     
 }
 
 
@@ -660,12 +645,6 @@ function installModel(modelData, color_arr) {
 
     gl.uniform4f(u_diffuseColor, color_arr[0], color_arr[1], color_arr[2], 1);
     gl.uniform3f(u_specularColor, 0.5, 0.5, 0.5);
-
-    
-
-
-
-
 
     // add indicies
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,index_buffer);
@@ -705,13 +684,13 @@ function draw(){
         // sun light
         var sun_dist = 4.3; 
         var x_val = sun_dist * Math.cos(degToRad(sun_angle)); 
-        var y_val = sun_dist * Math.sin(degToRad(sun_angle)); 
-        gl.uniform4f(u_sunLightPosition, x_val, y_val,0 ,0); 
+        var z_val = sun_dist * Math.sin(degToRad(sun_angle)); 
+        gl.uniform4f(u_sunLightPosition, x_val,0 ,z_val ,0); 
 
-        // // left headlight
-        // var x_val = 2.6 / Math.cos(degToRad(10)) * Math.cos(degToRad(sun_angle + 13.5)); 
-        // var z_val = 2.6 / Math.cos(degToRad(10)) * Math.sin(degToRad(sun_angle + 13.5)); 
-        // gl.uniform4f(u_leftHeadlightPosition, x_val, 0,z_val ,0); 
+        // left headlight
+        var x_val = 2.6 / Math.cos(degToRad(10)) * Math.cos(degToRad(sun_angle + 13.5)); 
+        var z_val = 2.6 / Math.cos(degToRad(10)) * Math.sin(degToRad(sun_angle + 13.5)); 
+        gl.uniform4f(u_leftHeadlightPosition, x_val, 0,z_val ,0); 
 
         // // right headlight
         // var x_val = 2.1 / Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 17)); 
@@ -720,4 +699,22 @@ function draw(){
         
 
     }
+}
+
+var animationOn = false;
+var sun_angle = 280; 
+var car_angle = 30; 
+
+var colors = {
+    red: [0.4,0,0], 
+    dark_red: [0.3, 0, 0], 
+    yellow: [0.8,0.8,0], 
+    green: [0,0.2,0], 
+    dark_green: [0.0,0.15,0.0], 
+    brown: [50/256,15/256,0], 
+    grey: [50/256, 50/256, 50/256], 
+    dark_grey: [40/256, 40/256, 40/256], 
+    black: [0,0,0], 
+    gold: [0.3,0.3,0.04],
+    blue: [0,0,1], 
 }
