@@ -25,6 +25,8 @@ var my_color;
 var u_sunLightPosition; 
 var u_leftHeadlightPosition; 
 var u_rightHeadlightPosition; 
+var u_leftLightDirection; 
+var u_rightLightDirection; 
 
 var u_sunIsUp; 
 var u_lightColoringInProgess;
@@ -628,6 +630,8 @@ function initGL() {
     u_sunLightPosition = gl.getUniformLocation(prog, "sunLightPosition");
     u_leftHeadlightPosition = gl.getUniformLocation(prog, "leftHeadLightPosition"); 
     u_rightHeadlightPosition = gl.getUniformLocation(prog, "rightHeadLightPosition"); 
+    u_leftLightDirection = gl.getUniformLocation(prog, "u_leftLightDirection"); 
+    u_rightLightDirection = gl.getUniformLocation(prog, "u_rightLightDirection"); 
 
     u_sunIsUp = gl.getUniformLocation(prog, "sunIsUp"); 
     u_lightColoringInProgess = gl.getUniformLocation(prog, "lightColoringInProgress"); 
@@ -674,6 +678,37 @@ function draw(){
 
 
 
+
+
+
+
+    // left light direction
+    var x_val = Math.cos(degToRad(car_angle + 90));
+    var y_val = -1 * (1 + Math.cos(degToRad(car_angle))/2 );
+    var z_val =  -0.5 + 0.5 * Math.cos(degToRad(car_angle)); 
+    gl.uniform3f(u_leftLightDirection, x_val, y_val, z_val);
+    
+    // right light direction
+    var inward_percent = 0.8;
+    var x_val = inward_percent * Math.cos(degToRad(car_angle + 90));
+    var y_val = inward_percent * (-1 * (1 + Math.cos(degToRad(car_angle))/2 ));
+    var z_val =  0 + 0.5 * Math.cos(degToRad(car_angle)); 
+    gl.uniform3f(u_rightLightDirection, x_val, y_val, z_val);
+
+    /* 
+        0 degrees = 0
+        90 degrees = -0.5
+        180 degrees = -1 !!!
+        270 degrees = -0.5
+    */ 
+
+
+
+
+
+
+
+
     if(sun_angle > 180){
         // DARKNESS
         makePole(true); 
@@ -698,9 +733,6 @@ function draw(){
     }
 }
 
-var animationOn = true;
-var sun_angle = 280; 
-var car_angle = 60; 
 var colors = {
     red: [0.4,0,0], 
     dark_red: [0.3, 0, 0], 
@@ -714,3 +746,7 @@ var colors = {
     gold: [0.3,0.3,0.04],
     blue: [0,0,1], 
 }
+
+var sun_angle = 90; 
+var car_angle = 90;  
+var animationOn = true;
