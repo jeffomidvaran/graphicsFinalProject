@@ -667,10 +667,10 @@ function draw(){
     var z_val =  -11 - 4 * (1 + Math.sin(-degToRad(car_angle +30))); 
     gl.uniform4f(u_leftHeadlightPosition, x_val, 0,  z_val ,1); 
 
-    // // right headlight
-    // var x_val = 3* Math.cos(-degToRad(car_angle +30 )); 
-    // var z_val =  -11 - 4 * (1 + Math.sin(-degToRad(car_angle +30))); 
-    // gl.uniform4f(u_rightHeadlightPosition, x_val, 0, z_val ,1); 
+    // right headlight
+    var x_val = 3* Math.cos(-degToRad(car_angle +30 )); 
+    var z_val =  -11 - 4 * (1 + Math.sin(-degToRad(car_angle +30))); 
+    gl.uniform4f(u_rightHeadlightPosition, x_val, 0, z_val ,1); 
 
 
 
