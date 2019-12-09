@@ -62,6 +62,7 @@
 		uniform vec4 rightHeadLightPosition; 
 		uniform vec4 leftHeadLightPosition; 
 
+
 		varying vec4 v_color;
 		varying vec3 v_normal;  
 		varying vec3 v_position; 
@@ -69,18 +70,19 @@
 
 		void main() {
 
-			vec3 N, V; 
-			N = v_normal; 
+			vec3 N = normalize(v_normal); 
 			vec4 ambientLight = 0.1 * diffuseColor;
-			vec4 eye = modelview * vec4(v_position, 1.0); 
-			V = normalize(-eye.xyz); 
+			vec3 n_position = normalize(v_position); 
+			vec4 eye = modelview * vec4(n_position, 1.0); 
+			vec3 V = normalize(-eye.xyz); 
+			vec4 n_color = normalize(v_color); 
 
 			// ########################################### 
 			// ######## Sun Light ######################## 
 			// ########################################### 
-			vec3 SL, sun_R;
-			SL = normalize(sunLightPosition.xyz); 
-			sun_R = -reflect(SL,N);
+
+			vec3 SL = normalize(sunLightPosition.xyz); 
+			vec3 sun_R = -reflect(SL,N);
 
 			vec4 sunDiffuseLight = 0.8 * diffuseColor * max(dot(N,SL), 0.0); 
 			vec4 sunSpecularLight= 0.4 * vec4(specularColor.xyz, 1.0) * 
@@ -93,83 +95,152 @@
 			// ######## STREET LIGHT ##################### 
 			// ########################################### 
 
-			vec3 PL, PL1, pole_R ; 
-
 			vec4 poleLightPosition= vec4(0,0, -200,10); 
-			PL = normalize(poleLightPosition.xyz/poleLightPosition.w - eye.xyz);
+			vec3 PL = normalize(poleLightPosition.xyz/poleLightPosition.w - eye.xyz);
 			vec4 plp1= vec4(0,0, -145,10); 
-			PL1 = normalize(plp1.xyz/plp1.w - eye.xyz);
-
+			vec3 PL1 = normalize(plp1.xyz/plp1.w - eye.xyz);
 
 			float a = 0.2;
             float b = 0.2; 
             float c = 0.5; 
 			float kd = 5.0; 
-			float distance = pow(v_position.x - PL.x , 2.0) + pow(v_position.y - PL.y, 2.0) + pow(v_position.z - PL.z, 2.0); 
+			float distance = pow(n_position.x - PL.x , 2.0) + pow(n_position.y - PL.y, 2.0) + pow(n_position.z - PL.z, 2.0); 
 			vec4 streetLightBasic = kd * diffuseColor * max(dot(N,PL1), 0.0); 
 			vec4 streetLightSpot = kd * diffuseColor * max(dot(N,PL), 0.0) / ( a + b * distance + c * pow(distance, 2.0)); 
 			vec4 streetLight = 0.4 * streetLightBasic + streetLightSpot; 
 
 
 			// ########################################### 
-			// ######## LEFT HEADLIGHT ################### 
-			// ########################################### 
+			// ######## HEADLIGHTS ####################### 
+			//   dot(vectorToLightSource, uLightDirection) < limit
+			//           LHL                  LHL
+			//     z should go from -10 to -20
+			// ################################## 
 
 
-			// dot(vectorToLightSource, uLightDirection) < limit 
+			vec4 lhp = leftHeadLightPosition; 
+			vec4 rhp = rightHeadLightPosition; 
+			vec3 LHL = normalize(lhp.xyz/lhp.w -eye.xyz);
+			vec3 RHL = normalize(rhp.xyz/rhp.w -eye.xyz);
 
-			// vec4 leftHeadLightPosition = vec4(0,0,-145,10); 
-			vec3 LHL; 
-			// LHL = leftHeadLightPosition.xyz/leftHeadLightPosition.w - eye.xyz;
-			LHL = normalize(leftHeadLightPosition.xyz/leftHeadLightPosition.w -eye.xyz);
-				
-			// vec4 leftHeadLight = diffuseColor * max(dot(N,LHL), 0.0);
-			// gl_FragColor = v_color + leftHeadLight; 
+			// vec3 LA =  LHL - gl_FragCoord.xyz;
+			vec3 lhl_direction = LHL - v_position.xyz;
+			vec3 RA =  v_position.xyz - RHL;
 
-
-
-
-
+			distance= pow(n_position.x - LHL.x, 2.0) + 
+					  pow(n_position.y - LHL.y, 2.0) + 
+					  pow(n_position.z - LHL.z, 2.0) ;
 
 
+			float hl_intensity = 5.0;
+			a =  0.25;
+			b =  0.25;
+			c =  1.0; 
+			vec4 leftHeadLight  = hl_intensity * diffuseColor * max(dot(N,LHL), 0.0);
+		                    	 //  ( a + b * distance + c * pow(distance, 2.0)); 
+			vec4 rightHeadLight = hl_intensity * diffuseColor * max(dot(N,RHL), 0.0); 
 
 
+			vec4 finalColor; 
+ 			if(dot(LHL, lhl_direction) < 0.94){
+   				finalColor = finalColor + leftHeadLight; 
+   			}else{
+			}
 
 
+   			
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+			// gl_FragColor =  leftHeadLight; 
+			gl_FragColor =  finalColor; 
 
 
 
 
- 			// DAY TIME
- 			if(lightColoringInProgress == 1 && sunIsUp == 1){
- 				gl_FragColor = v_color + sunDiffuseLight * 0.2 + sunSpecularLight * 0.2; 
- 			}
- 			else if(lightColoringInProgress == 0 && sunIsUp == 1){
- 				gl_FragColor = v_color + 1.5 *sunLight; 
- 			}
- 			// NIGHT TIME
- 			else if(lightColoringInProgress == 1 && sunIsUp == 0){
- 				gl_FragColor = v_color; 
- 			}else if(lightColoringInProgress == 0 && sunIsUp == 0){
- 				gl_FragColor = v_color + streetLight; 
- 				// gl_FragColor = v_color + leftHeadlight;
- 			}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// 			if(dot(RHL,RA) < 0.9){
+//   				finalColor = finalColor + rightHeadLight; 
+//   			}
+
+
+
+
+
+// 			// DAY TIME
+// 			if(lightColoringInProgress == 1 && sunIsUp == 1){
+// 				gl_FragColor = v_color + sunDiffuseLight * 0.2 + sunSpecularLight * 0.2; 
+// 			}
+// 			else if(lightColoringInProgress == 0 && sunIsUp == 1){
+// 				gl_FragColor = v_color + 1.5 *sunLight; 
+// 			}
+// 			// NIGHT TIME
+// 			else if(lightColoringInProgress == 1 && sunIsUp == 0){
+// 				gl_FragColor = v_color; 
+// 			}else if(lightColoringInProgress == 0 && sunIsUp == 0){
+// 				gl_FragColor = v_color + streetLight + leftHeadLight + rightHeadLight; 
+// 				// gl_FragColor = v_color + leftHeadlight;
+// 			}
 
 
 

@@ -663,9 +663,16 @@ function draw(){
 
 
     // left headlight
-    var x_val = 2.6 / Math.cos(degToRad(10)) * Math.cos(degToRad(car_angle + 13.5)); 
-    var z_val = 2.6 / Math.cos(degToRad(10)) * Math.sin(degToRad(car_angle + 13.5)); 
-    gl.uniform4f(u_leftHeadlightPosition, x_val, 9, z_val  ,0.1); 
+    var x_val = 4 * Math.cos(-degToRad(car_angle +30 )); 
+    var z_val =  -11 - 4 * (1 + Math.sin(-degToRad(car_angle +30))); 
+    gl.uniform4f(u_leftHeadlightPosition, x_val, 0,  z_val ,1); 
+
+    // // right headlight
+    // var x_val = 3* Math.cos(-degToRad(car_angle +30 )); 
+    // var z_val =  -11 - 4 * (1 + Math.sin(-degToRad(car_angle +30))); 
+    // gl.uniform4f(u_rightHeadlightPosition, x_val, 0, z_val ,1); 
+
+
 
     if(sun_angle > 180){
         // DARKNESS
@@ -688,19 +695,12 @@ function draw(){
         var x_val = sun_dist * Math.cos(degToRad(sun_angle)); 
         var y_val = sun_dist * Math.sin(degToRad(sun_angle)); 
         gl.uniform4f(u_sunLightPosition, x_val,y_val ,0 ,0); 
-
-
-
-        // // right headlight
-        // var x_val = 2.1 / Math.cos(degToRad(10)) * Math.cos(degToRad(angle_in_degrees + 17)); 
-        // var z_val = 2.1 / Math.cos(degToRad(10)) * Math.sin(degToRad(angle_in_degrees + 17)); 
-        // gl.uniform4f(u_rightHeadlightPosition, x_val, 0,z_val ,0); 
     }
 }
 
-var animationOn = false;
+var animationOn = true;
 var sun_angle = 280; 
-var car_angle = 90; 
+var car_angle = 60; 
 var colors = {
     red: [0.4,0,0], 
     dark_red: [0.3, 0, 0], 
